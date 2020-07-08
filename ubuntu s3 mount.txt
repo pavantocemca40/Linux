@@ -1,0 +1,22 @@
+   81  apt-get install build-essential libcurl4-openssl-dev libxml2-dev mime-support
+   83  apt-get install automake autotools-dev fuse g++ git libcurl4-gnutls-dev libfuse-dev libssl-dev libxml2-dev make pkg-config
+   84  git clone https://github.com/s3fs-fuse/s3fs-fuse.git
+   85  cd s3fs-fuse/
+   86  ./autogen.sh
+   87  ./configure
+   88  make
+   89  make install
+   90  which s3fs
+   91  vi /etc/passwd-s3fs
+        paste the accesskey&secret-access-key xxxxxxxxx:xxxxxxxxxxxxxxx
+   92  cat /etc/passwd-s3fs
+   93  chmod 640 passwd-s3fs
+   94  chmod 640 /etc/passwd-s3fs
+   95  mkdir -p /s3/backup
+   96  chmod 777 /tmp/cache /backup
+   96  s3fs -o use_cache=/tmp/cache chasermca40 /backup 
+   97  cat /etc/rc.local and paste it as shown below
+       /usr/local/bin/s3fs chasermca40 -o use_cache=/tmp -o allow_other -o uid=1001 -o mp_umask=002 -o multireq_max=5 /backup
+	                       (s3bucketname)                                                                              (dir name in ur server)
+   98 s3fs#s3bucketname /mountpoint fuse allow_other,use_cache=/tmp/cache,uid=userid,gid=groupid 0 0 - add it in /etc/fstab for permanent mounting
+  
