@@ -1,0 +1,125 @@
+
+sudo dd if=/dev/zero of=/swapfile bs=256M count=32(for 8-GB)
+
+------------######zypper not working########-----------------------------------------------------------------
+
+# Check zypper & cloud package version
+    rpm -qa |egrep "zypper|cloud"
+	
+# After this got to vi /etc/hosts and remove the below mentioned two lines and save the file. 
+
+Eg:- # Added by SMT registration do not remove, retain comment as well
+        52.66.45.16     smt-ec2.susecloud.net   smt-ec2
+
+# Cleanup & Deregister
+
+    rm /etc/SUSEConnect
+    rm -f /etc/zypp/{repos,services,credentials}.d/*
+    rm -f /usr/lib/zypp/plugins/services/*
+    sed -i '/^# Added by SMT reg/,+1d' /etc/hosts
+
+# Manually update packages
+	
+    wget --no-check-certificate https://52.15.49.139/late_instance_offline_update_ec2_x86_64_SLE12.tar.gz
+    sha1sum late_instance_offline_update_ec2_x86_64_SLE12.tar.gz  # The hash result should be: 1912c23c9140e406690160a9bd003a81fc79c14e
+    tar -xf late_instance_offline_update_ec2_x86_64_SLE12.tar.gz
+    cd x86_64
+    zypper --no-refresh --no-remote --non-interactive in *.rpm
+    rpm -qa |egrep "zypper|cloud"
+    /usr/sbin/registercloudguest --force-new
+    sudo systemctl start guestregister.service
+    sudo systemctl status guestregister.service
+    zypper ref
+	
+# After everything is done, please follow thepatching document I have shared.
+
+========================================================================================================
+
+########################Zypper not working##############################
+
+
+1. run the "SUSEConnect -s" to check if they are registered or now
+
+2. check the billing products
+
+curl -s http://169.254.169.254/latest/dynamic/instance-identity/document | grep billingProducts
+
+3. check cloud-regionsrv-client version, should be version 9.0 or above
+
+4. de-register the instance running below commands
+To clean up credentials and repositories:
+
+# SUSEConnect --de-register
+# SUSEConnect --cleanup
+# rm -f /etc/SUSEConnect
+# rm -rf /etc/zypp/credentials.d/*
+# rm -rf /etc/zypp/repos.d/*
+# rm -f /etc/zypp/services.d/*
+# SUSEConnect --cleanup
+# SUSEConnect --de-register
+To clean up /etc/hosts file from SMT entry:
+
+> Delete the line added by previous registration attempt. Example: 
+# vi /etc/hosts 
+
+# Added by SMT registration do not remove, retain comment as well 
+54.246.90.215 smt-ec2.susecloud.net smt-ec2
+
+5. rgister the instance again with the command
+
+# registercloudguest --force-new 
+
+6. check to ensure, if there any error in logs
+
+tail /var/log/cloudregister 
+
+7. confirm the instance is registered status
+
+# SUSEConnect -s 
+
+8. then, run the zypper lr to list the SMT repositories 
+
+we followed the above steps on this instance and able to resolve the issue
+
+
+https://www.suse.com/support/kb/doc/?id=000019054
+
+##########################################################################################################
+
+cd /etc/zypp/credentials.d/                                                 79e8cc55be8e41b6b2c838237c82247a
+ ==> the issue was in the cloud-regionsrv-client package (Matador issue)
+
+ SCCcredentials:-
+ 
+ username=SCC_3be1c706c9c94c368ca17a68284b41cc
+password=132691c9d7db4c4a
+
+########## AWS  Support Case ID:- 7400633271 #################
+Please check service status:
+sudo systemctl status guestregister.service
+
+rm /etc/SUSEConnect
+rm -f /etc/zypp/{repos,services,credentials}.d/*
+rm -f /usr/lib/zypp/plugins/services/*
+sed -i '/^# Added by SMT reg/,+1d' /etc/hosts
+/usr/sbin/registercloudguest --force-new
+
+please try to run the comand below:
+curl -Ikv https://smt-ec2.susecloud.net
+
+cd /etc/products.d
+ls -l
+wget --no-check-certificate https://52.15.49.139/late_instance_offline_update_ec2_x86_64_SLE12.tar.gz
+
+sha1sum late_instance_offline_update_ec2_x86_64_SLE12.tar.gz
+
+tar -xf late_instance_offline_update_ec2_x86_64_SLE12.tar.gz
+
+zypper --no-refresh --no-remote --non-interactive in *.rpm
+
+/usr/sbin/registercloudguest --force-new
+
+sudo systemctl start guestregister.service
+
+sudo systemctl status guestregister.service
+

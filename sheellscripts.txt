@@ -1,0 +1,63 @@
+###aws dailysync.sh##########
+
+#/bin/bash
+PATH=/usr/bin:/usr/local/bin
+aws s3 mv /sapbackup/SEPBACKUP/DATA/DB_SEP/ s3://sobhabackup/day --recursive
+
+##########bkscrip_month.sh#####################
+
+NOW=$(date +"%Y-%m-%d")
+DIR2="/backup/month/SEPBACKUP/DATA/DB_SEP"
+mkdir "$DIR2"/"$NOW"
+DIR1="$DIR2"/"$NOW"
+#find /sapbackup/SEPBACKUP/DATA/DB_SEP/ -name \* -mtime -1 -exec ls -ltr {} >> "$NOW"_log \;
+find /sapbackup/SEPBACKUP/DATA/DB_SEP/ -type f -newermt "$NOW" -ls >> "$DIR1"/"$NOW".txt
+find /sapbackup/SEPBACKUP/DATA/DB_SEP/ -type f -newermt "$NOW" -exec mv {} "$DIR1" \;
+
+########yearly backup#################
+
+NOW=$(date +"%Y-%m-%d")
+DIR2="/backup/year/SEPBACKUP/DATA/DB_SEP"
+mkdir "$DIR2"/"$NOW"
+DIR1="$DIR2"/"$NOW"
+#find /sapbackup/SEPBACKUP/DATA/DB_SEP/ -name \* -mtime -1 -exec ls -ltr {} >> "$NOW"_log \;
+find /sapbackup/SEPBACKUP/DATA/DB_SEP/ -type f -newermt "$NOW" -ls >> "$DIR1"/"$NOW".txt
+find /sapbackup/SEPBACKUP/DATA/DB_SEP/ -type f -newermt "$NOW" -exec mv {} "$DIR1" \;
+
+#####weekly backup#################
+
+NOW=$(date +"%Y-%m-%d")
+DIR2="/backup/week/SEPBACKUP/DATA/DB_SEP"
+mkdir "$DIR2"/"$NOW"
+DIR1="$DIR2"/"$NOW"
+#find /sapbackup/SEPBACKUP/DATA/DB_SEP/ -name \* -mtime -1 -exec ls -ltr {} >> "$NOW"_log \;
+find /sapbackup/SEPBACKUP/DATA/DB_SEP/ -type f -newermt "$NOW" -ls >> "$DIR1"/"$NOW".txt
+find /sapbackup/SEPBACKUP/DATA/DB_SEP/ -type f -newermt "$NOW" -exec mv {} "$DIR1" \;
+
+##################yearly sync#################################
+
+#/bin/bash
+PATH=/usr/bin:/usr/local/bin
+aws s3 sync /sapbackup/SEPBACKUP/DATA/DB_SEP/ s3://sobhabackup/year
+
+##############awslogsync####################################
+
+#/bin/bash
+PATH=/usr/bin:/usr/local/bin
+aws s3 mv  /sapbackup/SEPBACKUP/LOG/ s3://sobhabackup/LOG --recursive
+
+#############################aws nobthly backup################################
+
+#/bin/bash
+PATH=/usr/bin:/usr/local/bin
+aws s3 sync /sapbackup/SEPBACKUP/DATA/DB_SEP/ s3://sobhabackup/month
+
+##################deletion of files older than x days##########################
+
+10 10 * * * /usr/bin/find /usr/sap/backup -name "*.dmp" -type f -mtime +7 -exec rm -f {} \;
+
+04 07 * * * /usr/bin/find /sybase/backup -name "*.dmp" -type f -mtime +5 -exec rm -f {} \;
+
+
+
+
